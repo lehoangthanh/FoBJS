@@ -17,6 +17,7 @@ var DProductionDict = [];
 var DGoodProductionDict = [];
 var DResidentialDict = [];
 var BuildingsDict = [];
+
 var AllBoosts = {
     'happiness_amount': 0,
     'coin_production': 0,
@@ -384,7 +385,7 @@ function GetBuildings(data) {
                 if (resData["responseData"].hasOwnProperty(key)) {
                     const item = resData["responseData"][key];
                     if (item["__class__"] === "CityMap") {
-                        BuildingsDict = item["entities"];
+                      BuildingsDict = item["entities"];
                     }
                 }
             }
@@ -392,6 +393,30 @@ function GetBuildings(data) {
     }
     exports.BuildingsDict = BuildingsDict;
 }
+
+function GetOutPostShipBuilding(data) {
+  for (let i = 0; i < data.length; i++) {
+    if (resData["requestClass"] === "CityMapService" && resData["requestMethod"] === "getCityMap") {
+      for (const key in resData["responseData"]) {
+        if (resData["responseData"].hasOwnProperty(key)) {
+          const item = resData["responseData"][key];
+          if (item["__class__"] === "CityMap") {
+            BuildingsDict = item["entities"];
+            // const cityEntityId = item.hasOwnProperty("cityentity_id")
+            //   ? item["cityentity_id"] : "";
+            // const type = item.hasOwnProperty("type")
+            //   ? item["type"] : "";
+            // if (["J_Vikings_Diplomacy4"].indexOf(cityEntityId) > -1 || ["cultural_goods_production"].indexOf(type) > -1) {
+            //   BuildingsDict = item["entities"];
+            // }
+          }
+        }
+      }
+    }
+  }
+  exports.BuildingsDict = BuildingsDict;
+}
+
 function GetHappinesBoost() {
     let d = BuildingsDict;
     var BuildingsAll = [];
@@ -457,7 +482,7 @@ function GetAllBuildings(metaCity) {
                 width: j[i]['width'],
                 height: j[i]['length'],
                 type: j[i]['type'],
-                provided_happiness: j[i]['provided_happiness'],
+                provided_happiness: j[i]['provided_happiness'] || 0,
                 population: undefined,
                 entity_levels: j[i]['entity_levels'],
                 available_products: j[i]['available_products'],
@@ -499,12 +524,22 @@ function GetOwnBuildings() {
                     cb["name"] = mb.name;
                     cb["available_products"] = mb["available_products"];
                     cb["type"] = mb["type"];
+                    const availableProds = cb["available_products"];
+                    const isProduct =
+                    typeof availableProds === 'object' && availableProds.length > 0
+                    && availableProds[0].hasOwnProperty('__class__')
+                    && availableProds[0]['__class__'] === 'CityEntityProductionProduct'
+                    && availableProds[0].hasOwnProperty('production_time');
+
+                    if (typeof availableProds === Array)
                     if (cb.type === 'production' && cb['connected'] && FoBCore.hasOnlySupplyProduction(cb["available_products"]))
                         ProductionDict.push(cb);
                     else if (cb.type === 'residential' && cb['connected'])
                         ResidentialDict.push(cb);
                     else if (cb.type === 'goods' && cb['connected'])
                         GoodProdDict.push(cb);
+                    else if (cp.type === 'diplomacy' && cb['connected'] && isProduct)
+                      ProductionDict.push(cb);
                     else if (cb.type !== 'culture' && cb.type !== 'decoration' && cb.type !== 'street' && cb.type !== 'tower'&& cb.type !== 'military'&& cb['connected']) {
                         AllOtherDict.push(cb);
                     }
@@ -822,6 +857,7 @@ exports.GetAllBuildings = GetAllBuildings;
 exports.GetRewardResult = GetRewardResult;
 exports.GetBoosts = GetBoosts;
 exports.GetBuildings = GetBuildings;
+exports.GetOutPostShipBuilding = GetOutPostShipBuilding;
 exports.GetUserData = GetUserData;
 exports.GetHiddenRewards = GetHiddenRewards;
 exports.GetResourceDefinitions = GetResourceDefinitions;

@@ -23,6 +23,11 @@ const init = (UID, VS, VMM, WID, UCOOKIE) => {
 const GetStartup = () => {
     return GetStartupData();
 }
+
+const GetOutPostShip = () => {
+  return GetOutPostShipData();
+}
+
 const DoMotivate = (playerid) => {
     return Motivate(playerid);
 }
@@ -135,6 +140,17 @@ const GetStartupData = () => {
     x[0]["requestId"] = 1;
     let sig = calcSig(x);
     return fetchData(x, sig);
+}
+
+const GetOutPostShipData = () => {
+  var x = [{}];
+  x[0]["__class__"] = "ServerRequest";
+  x[0]["requestData"] = ["cultural_outpost"];
+  x[0]["requestClass"] = "CityMapService";
+  x[0]["requestMethod"] = "getCityMap";
+  x[0]["requestId"] = FoBCore.getNextRequestID();
+  let sig = calcSig(x);
+  return fetchData(x, sig);
 }
 
 const LogService = () => {
@@ -314,12 +330,10 @@ async function fetchData(x, sig) {
     "mode": "cors"
   };
     let res = await fetch("https://" + WorldID + ".forgeofempires.com/game/json?h=" + User_Key, initData);
-    console.log('====initData', initData)
     if (res.status === 200) {
         let body = await res.text();
         try {
             var json = JSON.parse(body);
-            console.log('==JSON==',json)
             if(json[0]["__class__"] === "Error" || json[0]["__class__"] === "Redirect")
                 FoBMain.SessionExpired();
             return json;
@@ -413,5 +427,6 @@ exports.GetNeighbor = GetNeighbor;
 exports.GetLGs = GetLGs;
 exports.GetEntities = GetEntities;
 exports.GetStartup = GetStartup;
+exports.GetOutPostShip = GetOutPostShip;
 exports.GetMetaDataUrls = GetMetaDataUrls;
 exports.GetAllWorld = GetAllWorld;

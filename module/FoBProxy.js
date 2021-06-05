@@ -14,7 +14,7 @@ let headers = null;
 let CookieGL = null;
 let isLoadLogin = true;
 
-const init = () => {
+const init = (isAutoLogin) => {
 
     const filter = {
         urls: ['https://*.forgeofempires.com/', "https://*.forgeofempires.com/page/", "https://*.forgeofempires.com/game/login*", "https://*.forgeofempires.com/game/index?"]
@@ -62,25 +62,29 @@ const init = () => {
     session.defaultSession.webRequest.onBeforeSendHeaders(filter, (details, callback) => {
       if (details.url.indexOf(".forgeofempires.com/game/index?") > -1 && details.requestHeaders["Cookie"] !== undefined) {
         headers = details.requestHeaders;
+        if (!isAutoLogin) {
+          CookieGL = details.requestHeaders["Cookie"];
+          myEmitter.emit("COOKIE_Loaded", CookieGL);
+        }
       }
 
       if (details.url.indexOf(".forgeofempires.com/game/login") > -1 && details.requestHeaders["Cookie"] !== undefined) {
-        CookieGL =  details.requestHeaders["Cookie"];
-        console.log('====',)
+        CookieGL = details.requestHeaders["Cookie"];
       }
 
-        if (undefined !== details.requestHeaders["Cookie"]) {
-            cookie = details.requestHeaders["Cookie"];
-            if (cookie.indexOf('cid') > -1) {
-                CID = cookie.split(';').find(e => (e.indexOf("cid") > -1)).replace(" ", "").replace("cid=", "");
-                myEmitter.emit("CID_Loaded", CID);
-            }
-            if (cookie.indexOf('sid') > -1 && isLoadLogin) {
-                SID = cookie.split(';').find(e => (e.indexOf("sid") > -1)).replace(" ", "").replace("sid=", "");
-                myEmitter.emit("SID_Loaded", SID);
-            }
+      if (undefined !== details.requestHeaders["Cookie"]) {
+        cookie = details.requestHeaders["Cookie"];
+        if (cookie.indexOf('cid') > -1) {
+          CID = cookie.split(';').find(e => (e.indexOf("cid") > -1)).replace(" ", "").replace("cid=", "");
+          myEmitter.emit("CID_Loaded", CID);
         }
-        callback({ requestHeaders: details.requestHeaders })
+        if (cookie.indexOf('sid') > -1 && isLoadLogin) {
+          SID = cookie.split(';').find(e => (e.indexOf("sid") > -1)).replace(" ", "").replace("sid=", "");
+          myEmitter.emit("SID_Loaded", SID);
+        }
+      }
+
+      callback({requestHeaders: details.requestHeaders})
     })
 
   function fetchUID(headers, world, retryCount = 0) {
