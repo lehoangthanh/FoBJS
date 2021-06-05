@@ -58,6 +58,7 @@ var UserIDs = {
     SID: null,
     UID: null,
     WID: null,
+    COOKIE: null,
     ForgeHX: null,
 }
 /** @type {Array} */
@@ -102,8 +103,8 @@ FoBCore.debug(`Vars loaded`);
 
 
 const store = new Store();
-UserName = store.get("UserName");
-Password = store.get("Password");
+// UserName = store.get("UserName");
+// Password = store.get("Password");
 LastWorld = store.get("LastWorld");
 PlayableWorld = store.get("PlayableWorld");
 WorldServer = store.get("WorldServer");
@@ -111,6 +112,8 @@ Lng = store.get("Language");
 Settings = store.get("Settings");
 DarkMode = store.get("DarkMode");
 DetailedDisplay = store.get("DetailedDisplay")
+Cookie = store.get("Cookie")
+
 if (Lng === undefined) {
     Lng = "en";
     store.set('Language', Lng);
@@ -146,6 +149,7 @@ if (Settings.ProductionBot) {
     FoBCore.debug(`Productionbot running from startup`);
     BotsRunning.ProductionBot = true;
 }
+
 function createWindow() {
 
     FoBFunctions.CheckUpdate(app.getVersion()).then((x = { hasUpdate, newVersion }) => {
@@ -160,7 +164,7 @@ function createWindow() {
         } else {
             FoBCore.debug(`Update checked - no update available`);
             let win = new BrowserWindow({
-                title: "FoB v" + app.getVersion() + " | by TH3C0D3R",
+              title: "FoB v" + app.getVersion() + " | by TH3C0D3R",
                 width: 910,
                 height: 947,
                 webPreferences: {
@@ -240,17 +244,21 @@ function createWindow() {
         }
     });
 }
+
 app.on('ready', createWindow);
+
 app.on('window-all-closed', () => {
     if (process.platform !== 'darwin') {
         app.quit()
     }
 })
+
 app.on('activate', () => {
     if (win === null) {
         createWindow()
     }
 })
+
 function clickDO() {
     if (null === UserIDs.UID && ((UserName !== null && Password !== null && LastWorld !== null) && (UserName !== undefined && Password !== undefined && LastWorld !== undefined))) {
         FoBCore.debug(`Username, Password and LastWorld found`);
@@ -262,6 +270,7 @@ function clickDO() {
         ipcMain.once('getUsername', GotUsername);
     }
 }
+
 function GotUsername(e, data) {
     if ("" !== data) {
         UserName = data;
@@ -270,12 +279,14 @@ function GotUsername(e, data) {
         ipcMain.once('getPassword', GotPassword);
     }
 }
+
 function GotPassword(e, data) {
     if ("" !== data) {
         Password = data;
         createBrowserWindow("https://" + WorldServer + ".forgeofempires.com/");
     }
 }
+
 async function downloadForgeHX() {
     let filePath = path.join(app.getPath("cache"), UserIDs.ForgeHX);
     if (!fs.existsSync(filePath)) {
@@ -326,6 +337,7 @@ async function downloadForgeHX() {
         Gwin.webContents.send('print', "FAILED GETTING VERSION FROM FORGE.HX");
     }
 }
+
 async function DoLogout() {
     Gwin.webContents.send('clear', "");
     FoBCore.debug(`Doing Logout`);
@@ -336,6 +348,7 @@ async function DoLogout() {
         SID: null,
         UID: null,
         WID: null,
+        COOKIE: null,
         ForgeHX: null,
     }
     FoBCore.debug(`UserData cleard`);
@@ -354,6 +367,7 @@ async function DoLogout() {
     FoBCore.pWL(Gwin, app);
     Gwin.loadFile(path.join(asarPath, "html", "login.html"));
 }
+
 proxy.emitter.on("SID_Loaded", data => {
     if (UserIDs.SID === null || UserIDs.SID !== data) {
         FoBCore.debug(`SID (${data}) loaded`);
@@ -361,6 +375,7 @@ proxy.emitter.on("SID_Loaded", data => {
             UserIDs.SID = data;
     }
 });
+
 proxy.emitter.on("XSRF_Loaded", (data) => {
     if (UserIDs.XSRF === null || UserIDs.XSRF !== data) {
         FoBCore.debug(`XSRF (${data}) loaded`);
@@ -396,6 +411,15 @@ proxy.emitter.on("WID_Loaded", data => {
             UserIDs.WID = data;
     }
 });
+
+proxy.emitter.on("COOKIE_Loaded", data => {
+  if (UserIDs.COOKIE === null || UserIDs.COOKIE !== data) {
+    FoBCore.debug(`COOKIE (${data}) loaded`);
+    if (null !== data)
+      UserIDs.COOKIE = data;
+  }
+});
+
 proxy.emitter.on("UID_Loaded", data => {
     if (UserIDs.UID === null || UserIDs.UID !== data) {
         if (null !== data) {
@@ -404,8 +428,10 @@ proxy.emitter.on("UID_Loaded", data => {
             downloadForgeHX().then(() => {
                 if (null !== UserIDs.UID && !Lwin.isDestroyed()) {
                     Lwin.destroy();
-                    Gwin.webContents.send('print', "Loading Bot...");
-                    builder.init(UserIDs.UID, VS, VMM, UserIDs.WID);
+
+                  Gwin.webContents.send('print', "Loading Bot...");
+                  builder.init(UserIDs.UID, VS, VMM, UserIDs.WID, UserIDs.COOKIE);
+                  FoBWorldParser.GetWorlds(() => Worlds = FoBWorldParser.Worlds);
                     GetData(true, () => {
                         BuildMenu((UserIDs.UID === null), (UserIDs.UID !== null), (UserIDs.UID !== null), true, true, isDev);
                         if (BotsRunning.ProductionBot) {
@@ -479,9 +505,11 @@ function GetData(clear = true, callback = null, dorefresh = true) {
                 });
         });
 }
+
 var tableProductionList = undefined;
 var buildingContent = undefined;
 var lastSend = new Date()
+
 function PrepareInfoMenu() {
     if (UserIDs.CID === null && UserIDs.UID === null && UserIDs.SID === null) {
         Gwin.loadFile(path.join(asarPath, "html", "login.html"));
@@ -762,10 +790,12 @@ function PrepareInfoMenu() {
         dialog.showMessageBox(null,{message : `${r.code} - ${r.errno} loadURL catch`})
     });
 }
+
 function addDivision(){
     tableProductionList = tableProductionList
         .replace("###Building###", "<tr><td style=\"width: auto; text-align: center;\" colspan=\"3\"><hr /></td></tr>###Building###")
 }
+
 function displayList(dList){
     for (let _key in dList) {
         if (!dList.hasOwnProperty(_key)) return;
@@ -840,6 +870,7 @@ function displayList(dList){
         tableProductionList = tableProductionList.replace("###Building###", localContent);
     }
 }
+
 function cbwDomReady() {
     let filePath = path.join(asarPath, 'js', 'preloadLogin.js');
     var content = fs.readFileSync(filePath, 'utf8');
@@ -851,14 +882,16 @@ function cbwDomReady() {
     content = content.replace(/###XSRF-TOKEN###/g, UserIDs.XSRF).replace(/###USERNAME###/g, name).replace(/###PASSWORD###/g, pass).replace(/###WorldServer###/g, WorldServer);
     Lwin.webContents.executeJavaScript(`${content}`);
 }
+
 function createBrowserWindow(url) {
     FoBCore.debug(`Creating Browserwindow`);
     const win = new BrowserWindow({
+        frame: false,
         height: 600,
         width: 800
     });
     FoBCore.debug(`Hiding Browserwindow`);
-    win.hide();
+    // win.hide();
     FoBCore.debug(`loading ${url}`);
     win.loadURL(url);
     Lwin = win;
@@ -897,19 +930,22 @@ function createBrowserWindow(url) {
         });
     });
 }
+
 function LoadWorld(e, data) {
     if (undefined !== PlayableWorld[data]) {
         FoBCore.debug(`World choosen: ${data} (${PlayableWorld[data]})`);
         store.set("LastWorld", data);
         store.set("PlayableWorld", PlayableWorld);
+        store.set("COOKIE", UserIDs.COOKIE);
         Gwin.webContents.send('clear', "");
         let filePath = path.join(asarPath, 'js', 'preloadSelectWorld.js');
         var content = fs.readFileSync(filePath, 'utf8');
         FoBCore.debug(`login into world`);
         content = content.replace(/###WORLD_ID###/g, data).replace(/###WorldServer###/g, WorldServer)
-        Lwin.webContents.executeJavaScript(`${content}`);
+        Lwin.webContents.executeJavaScript(`${content}`, true);
     }
 }
+
 function SwitchWorld(world) {
     FoBCore.debug(`switching to world ${world}`);
     store.set("LastWorld", world);
@@ -919,6 +955,7 @@ function SwitchWorld(world) {
         CID: null,
         SID: null,
         UID: null,
+        COOKIE: null,
         WID: world,
         ForgeHX: null,
     }
@@ -929,6 +966,7 @@ function SwitchWorld(world) {
     clickDO();
     BuildMenu((UserIDs.UID === null), (UserIDs.UID !== null), (UserIDs.UID !== null), true, true, isDev);
 }
+
 function assocFunction(command, args = null) {
     var x = {
         'Login': async () => { return clickDO(); }
@@ -944,13 +982,15 @@ function assocFunction(command, args = null) {
         Gwin.webContents.send('block', false);
     }
 }
+
 function createBrowserWindowAuto(url) {
     FoBCore.debug(`Login automaticaly with existing Username and Password`);
     const win = new BrowserWindow({
+        frame: false,
         height: 600,
         width: 800
     });
-    win.hide();
+    // win.hide();
     win.loadURL(url);
     win.webContents.once('dom-ready', cbwDomReady);
     win.webContents.on("did-navigate-in-page", (e, url) => {
@@ -964,6 +1004,7 @@ function createBrowserWindowAuto(url) {
     });
     Lwin = win;
 }
+
 function SwitchProduction(element, id) {
     FoBCore.debug(`Switch Production: ${element.text}`);
     CurrentProduction.id = element.id;
@@ -972,6 +1013,7 @@ function SwitchProduction(element, id) {
     exports.CurrentProduction = CurrentProduction;
     BuildMenu((UserIDs.UID === null), (UserIDs.UID !== null), (UserIDs.UID !== null), true, true, isDev);
 }
+
 function SwitchGoodProduction(element, id) {
     FoBCore.debug(`Switch GoodProduction: ${element.text}`);
     CurrentGoodProduction.id = element.id;
@@ -980,6 +1022,7 @@ function SwitchGoodProduction(element, id) {
     exports.CurrentGoodProduction = CurrentGoodProduction;
     BuildMenu((UserIDs.UID === null), (UserIDs.UID !== null), (UserIDs.UID !== null), true, true, isDev);
 }
+
 function BuildMenu(login, logout, functions, settings, quit, devtools) {
     FoBCore.debug(`Building Menu (Login: ${login !== null}, Logout: ${logout !== null}, Functions: ${functions !== null}, Settings: ${settings !== null}, Quit: ${quit !== null} , DevTools: ${devtools !== null})`);
     worlds = [];
@@ -1033,6 +1076,7 @@ function BuildMenu(login, logout, functions, settings, quit, devtools) {
 
     Menu.setApplicationMenu(menu);
 }
+
 function addLogin(menu) {
     mitem = new MenuItem({
         label: `${i18n("Menu.Login")}`,
@@ -1041,6 +1085,7 @@ function addLogin(menu) {
     })
     menu.append(mitem);
 }
+
 function addLogout(menu) {
     mitem = new MenuItem({
         label: `${i18n("Menu.Logout")}`,
@@ -1049,6 +1094,7 @@ function addLogout(menu) {
     })
     menu.append(mitem);
 }
+
 function addFunctions(menu) {
     var botItems = [];
     //Aid
@@ -1122,6 +1168,7 @@ function addFunctions(menu) {
     });
     menu.append(mitem);
 }
+
 function addSettings(menu, worlds = null, prodOptions = null, goodProdOptions = null) {
     var worldItem = [];
     if (null !== prodOptions) {
@@ -1273,6 +1320,7 @@ function addSettings(menu, worlds = null, prodOptions = null, goodProdOptions = 
     });
     menu.append(mitem);
 }
+
 function addQuit(menu) {
     mitem = new MenuItem({
         label: i18n("Menu.Quit"),
@@ -1281,6 +1329,7 @@ function addQuit(menu) {
     })
     menu.append(mitem);
 }
+
 function addDevTools(menu) {
     mitem = new MenuItem({
         label: i18n("Menu.DevTools"),
@@ -1289,6 +1338,7 @@ function addDevTools(menu) {
     })
     menu.append(mitem);
 }
+
 function setTavernBotIntervall() {
     prompt({
         title: i18n("Menu.TavernBotInterval"),
@@ -1306,6 +1356,7 @@ function setTavernBotIntervall() {
         throw err;
     })
 }
+
 function clearStorage() {
     UserIDs = {
         XSRF: null,
@@ -1313,11 +1364,13 @@ function clearStorage() {
         CID: null,
         WID: null,
         ForgeHX: null,
+        COOKIE: null,
         UID: null,
     }
     UserName = null;
     Password = null;
     LastWorld = null;
+    COOKIE = null;
     PlayableWorld = [];
     store.clear();
     Gwin.webContents.send('clear', "");
@@ -1327,6 +1380,7 @@ function clearStorage() {
     PrintServerSelection();
 
 }
+
 function SessionExpired() {
     FoBCore.debug(`Session Expired`);
     FoBCore.debug(`Stopping Bots`);
@@ -1339,6 +1393,7 @@ function SessionExpired() {
         clickDO();
     }, 1000 * 60 * 10);
 }
+
 function SetupIpcMain() {
     ipcMain.on('removeFriend', (e, data) => {
         FoBCore.debug(`Remove Freind: ${data}`);
@@ -1399,6 +1454,7 @@ function SetupIpcMain() {
         }
     });
 }
+
 async function ChangeLanguage(sL) {
     FoBCore.debug(`Change Language to ${sL}`);
     try {
@@ -1434,11 +1490,13 @@ async function ChangeLanguage(sL) {
         FoBCore.debug(`i18n translation loading error ${err}`);
     }
 }
+
 function PrintServerSelection() {
     FoBCore.pWL(Gwin, app, false);
     Gwin.webContents.send('chooseServer', [i18n("Login.ChooseServer"), FoBCore.Servers]);
     ipcMain.once("loadServer", loadServer);
 }
+
 function loadServer(e, data) {
     if (undefined !== FoBCore.Servers[data]) {
         FoBCore.debug(`Server ${data} selected`);
@@ -1449,6 +1507,7 @@ function loadServer(e, data) {
         Gwin.webContents.send('fillCommands', FoBCommands.getLoginCommands());
     }
 }
+
 exports.BotsRunning = BotsRunning;
 exports.GetData = GetData;
 exports.eState = eState;

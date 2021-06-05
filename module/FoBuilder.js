@@ -10,12 +10,14 @@ var WorldID = null,
     User_Key = null,
     Secret = null,
     VersionMajorMinor = null;
+    User_COOKIE = null;
 
-const init = (UID, VS, VMM, WID) => {
+const init = (UID, VS, VMM, WID, UCOOKIE) => {
     User_Key = UID;
     Secret = VS;
     WorldID = WID;
     VersionMajorMinor = VMM;
+    User_COOKIE = UCOOKIE;
 }
 
 const GetStartup = () => {
@@ -288,30 +290,36 @@ const GetAllWorld = () => {
 }
 
 async function fetchData(x, sig) {
-    let res = await fetch("https://" + WorldID + ".forgeofempires.com/game/json?h=" + User_Key, {
-        "credentials": "include",
-        "headers": {
-            "accept": "*/*",
-            "accept-language": "en-US,en;q=0.9,de-DE;q=0.8,de;q=0.7",
-            "cache-control": "no-cache",
-            "client-identification": "version=" + VersionMajorMinor + "; requiredVersion=" + VersionMajorMinor + "; platform=bro; platformType=html5; platformVersion=web",
-            "content-type": "application/json",
-            "pragma": "no-cache",
-            "sec-fetch-mode": "cors",
-            "sec-fetch-site": "same-origin",
-            "signature": sig,
-            "user-agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/79.0.3945.130 Safari/537.36"
-        },
-        "referrer": "https://" + WorldID + ".forgeofempires.com/game/index?",
-        "referrerPolicy": "no-referrer-when-downgrade",
-        "body": JSON.stringify(x).replace(' ', ''),
-        "method": "POST",
-        "mode": "cors"
-    });
+  const instanceId = calcInstance();
+  const cookieTmp = `instanceId:${instanceId}; ${User_COOKIE}`;
+  const initData = {
+    "credentials": "include",
+    "headers": {
+      "accept": "*/*",
+      "accept-language": "en-US,en;q=0.9,de-DE;q=0.8,de;q=0.7",
+      "cache-control": "no-cache",
+      "client-identification": "version=" + VersionMajorMinor + "; requiredVersion=" + VersionMajorMinor + "; platform=bro; platformType=html5; platformVersion=web",
+      "content-type": "application/json",
+      "pragma": "no-cache",
+      "sec-fetch-mode": "cors",
+      "sec-fetch-site": "same-origin",
+      "signature": sig,
+      "cookie": cookieTmp,
+      "user-agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/79.0.3945.130 Safari/537.36"
+    },
+    "referrer": "https://" + WorldID + ".forgeofempires.com/game/index?",
+    "referrerPolicy": "no-referrer-when-downgrade",
+    "body": JSON.stringify(x).replace(' ', ''),
+    "method": "POST",
+    "mode": "cors"
+  };
+    let res = await fetch("https://" + WorldID + ".forgeofempires.com/game/json?h=" + User_Key, initData);
+    console.log('====initData', initData)
     if (res.status === 200) {
         let body = await res.text();
         try {
             var json = JSON.parse(body);
+            console.log('==JSON==',json)
             if(json[0]["__class__"] === "Error" || json[0]["__class__"] === "Redirect")
                 FoBMain.SessionExpired();
             return json;
@@ -374,6 +382,10 @@ const calcSig = (x) => {
     let encoded = JSON.stringify(x).replace(' ', '')
     data = User_Key + Secret + encoded
     return crypto.createHash('md5').update(data).digest('hex').substr(0, 10);
+}
+
+const calcInstance = () => {
+  return Math.random().toString(36).substring(3);
 }
 
 exports.emitter = myEmitter;
