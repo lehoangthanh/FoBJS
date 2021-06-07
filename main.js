@@ -32,6 +32,8 @@ if (!fs.existsSync(app.getPath("userData"))) {
 /** @type {Boolean} */
 var isDev = false;
 
+var isAutoLogin = false;
+
 /** @type {Array} */
 var eState = { Producing: 1, Idle: 2, Finished: 3 };
 /** @type {BrowserWindow} */
@@ -103,8 +105,8 @@ FoBCore.debug(`Vars loaded`);
 
 
 const store = new Store();
-// UserName = store.get("UserName");
-// Password = store.get("Password");
+UserName = store.get("UserName");
+Password = store.get("Password");
 LastWorld = store.get("LastWorld");
 PlayableWorld = store.get("PlayableWorld");
 WorldServer = store.get("WorldServer");
@@ -180,7 +182,7 @@ function createWindow() {
             Gwin.loadFile(path.join(asarPath, "html", "login.html"));
             FoBCore.debug(`login.html loaded`);
 
-            proxy.init();
+            proxy.init(isAutoLogin);
             FoBCore.debug(`proxy loaded`);
 
             BuildMenu((UserIDs.UID === null), (UserIDs.UID !== null), (UserIDs.UID !== null), true, true, isDev);
@@ -261,13 +263,15 @@ app.on('activate', () => {
 
 function clickDO() {
     if (null === UserIDs.UID && ((UserName !== null && Password !== null && LastWorld !== null) && (UserName !== undefined && Password !== undefined && LastWorld !== undefined))) {
-        FoBCore.debug(`Username, Password and LastWorld found`);
-        createBrowserWindowAuto("https://" + WorldServer + ".forgeofempires.com/");
+      isAutoLogin = true;
+      FoBCore.debug(`Username, Password and LastWorld found`);
+      createBrowserWindowAuto("https://" + WorldServer + ".forgeofempires.com/");
     } else {
-        FoBCore.debug(`No saved Data found`);
-        FoBCore.debug(`request Username`);
-        Gwin.webContents.send('requestUsername', i18n("Login.EnterUsername"));
-        ipcMain.once('getUsername', GotUsername);
+      isAutoLogin = false;
+      FoBCore.debug(`No saved Data found`);
+      FoBCore.debug(`request Username`);
+      Gwin.webContents.send('requestUsername', i18n("Login.EnterUsername"));
+      ipcMain.once('getUsername', GotUsername);
     }
 }
 
@@ -362,6 +366,7 @@ async function DoLogout() {
     store.delete("LastWorld");
     store.delete("PlayableWorld");
     store.delete("WorldServer");
+    store.delete("COOKIE");
     FoBCore.debug(`UserData completly cleared`);
     BuildMenu(true, false, false, true, true, isDev);
     FoBCore.pWL(Gwin, app);
@@ -462,6 +467,10 @@ function GetData(clear = true, callback = null, dorefresh = true) {
                             ClanMemberDict = processer.GetClanMember(body);
                             builder.GetStartup()
                                 .then(body => {
+                                    const QuestService = body.find(rq => rq.requestClass === 'QuestService');
+                                    const OutPostQuest = QuestService.responseData.find(qs => qs.category === 'outpost');
+
+
                                     UserData = processer.GetUserData(body);
                                     processer.GetResourceDefinitions(body);
                                     processer.GetTavernInfo(body);
@@ -469,6 +478,11 @@ function GetData(clear = true, callback = null, dorefresh = true) {
                                     processer.GetOwnTavernInfo(body);
                                     processer.GetHiddenRewards(body);
                                     processer.GetBuildings(body);
+                                  if (OutPostQuest !== undefined) {
+                                    builder.GetOutPostShip().then(_dataOutPost => {
+                                      processer.GetOutPostShipBuildings(_dataOutPost);
+                                    })
+                                  }
                                     FoBFunctions.ArcBonus = processer.GetArcBonus(body);
                                     builder.GetMetaDataUrls(body, "city_entities").then(jsonbody => {
                                         if (jsonbody !== null) {
@@ -798,6 +812,7 @@ function addDivision(){
 
 function displayList(dList){
     for (let _key in dList) {
+
         if (!dList.hasOwnProperty(_key)) return;
         var localContent = buildingContent;
         var prod = (dList[_key]["prod"] !== undefined) ? dList[_key].prod : ((dList[_key]["res"] !== undefined) ? dList[_key].res : null);

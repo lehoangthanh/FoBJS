@@ -394,24 +394,30 @@ function GetBuildings(data) {
     exports.BuildingsDict = BuildingsDict;
 }
 
-function GetOutPostShipBuilding(data) {
+function GetOutPostShipBuildings(data) {
   for (let i = 0; i < data.length; i++) {
+    const resData = data[i];
     if (resData["requestClass"] === "CityMapService" && resData["requestMethod"] === "getCityMap") {
-      for (const key in resData["responseData"]) {
-        if (resData["responseData"].hasOwnProperty(key)) {
-          const item = resData["responseData"][key];
-          if (item["__class__"] === "CityMap") {
-            BuildingsDict = item["entities"];
-            // const cityEntityId = item.hasOwnProperty("cityentity_id")
-            //   ? item["cityentity_id"] : "";
-            // const type = item.hasOwnProperty("type")
-            //   ? item["type"] : "";
-            // if (["J_Vikings_Diplomacy4"].indexOf(cityEntityId) > -1 || ["cultural_goods_production"].indexOf(type) > -1) {
-            //   BuildingsDict = item["entities"];
-            // }
-          }
-        }
+      if (resData["responseData"].hasOwnProperty("entities")) {
+        BuildingsDict = BuildingsDict.concat(resData["responseData"]["entities"]);
       }
+      // for (const key in resData["responseData"]) {
+      //   if (resData["responseData"].hasOwnProperty(key)) {
+      //     const item = resData["responseData"][key];
+      //     console.log('==item["__class__"]==', key)
+      //     if (key === "entities") {
+      //       BuildingsDict = BuildingsDict.concat(item[key]);
+      //       // console.log('=====item["entities"]====', item["entities"])
+      //       // const cityEntityId = item.hasOwnProperty("cityentity_id")
+      //       //   ? item["cityentity_id"] : "";
+      //       // const type = item.hasOwnProperty("type")
+      //       //   ? item["type"] : "";
+      //       // if (["J_Vikings_Diplomacy4"].indexOf(cityEntityId) > -1 || ["cultural_goods_production"].indexOf(type) > -1) {
+      //       //   BuildingsDict = item["entities"];
+      //       // }
+      //     }
+      //   }
+      // }
     }
   }
   exports.BuildingsDict = BuildingsDict;
@@ -525,21 +531,22 @@ function GetOwnBuildings() {
                     cb["available_products"] = mb["available_products"];
                     cb["type"] = mb["type"];
                     const availableProds = cb["available_products"];
+
                     const isProduct =
-                    typeof availableProds === 'object' && availableProds.length > 0
+                       availableProds!== undefined
+                    && typeof availableProds === 'object' && availableProds.length > 0
                     && availableProds[0].hasOwnProperty('__class__')
                     && availableProds[0]['__class__'] === 'CityEntityProductionProduct'
                     && availableProds[0].hasOwnProperty('production_time');
-
-                    if (typeof availableProds === Array)
                     if (cb.type === 'production' && cb['connected'] && FoBCore.hasOnlySupplyProduction(cb["available_products"]))
                         ProductionDict.push(cb);
                     else if (cb.type === 'residential' && cb['connected'])
                         ResidentialDict.push(cb);
                     else if (cb.type === 'goods' && cb['connected'])
                         GoodProdDict.push(cb);
-                    else if (cp.type === 'diplomacy' && cb['connected'] && isProduct)
-                      ProductionDict.push(cb);
+                    // else if (cb.type === 'diplomacy' && cb['connected'] && isProduct) {
+                    //     ProductionDict.push(cb);
+                    // }
                     else if (cb.type !== 'culture' && cb.type !== 'decoration' && cb.type !== 'street' && cb.type !== 'tower'&& cb.type !== 'military'&& cb['connected']) {
                         AllOtherDict.push(cb);
                     }
@@ -857,7 +864,7 @@ exports.GetAllBuildings = GetAllBuildings;
 exports.GetRewardResult = GetRewardResult;
 exports.GetBoosts = GetBoosts;
 exports.GetBuildings = GetBuildings;
-exports.GetOutPostShipBuilding = GetOutPostShipBuilding;
+exports.GetOutPostShipBuildings = GetOutPostShipBuildings;
 exports.GetUserData = GetUserData;
 exports.GetHiddenRewards = GetHiddenRewards;
 exports.GetResourceDefinitions = GetResourceDefinitions;
