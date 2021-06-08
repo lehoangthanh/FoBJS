@@ -24,8 +24,12 @@ const GetStartup = () => {
     return GetStartupData();
 }
 
-const GetOutPostShip = () => {
-  return GetOutPostShipData();
+const GetOPSBuildings = () => {
+  return GetOPSBuldingData();
+}
+
+const GetOPSBuildingMeta = () => {
+  return GetOPSBuildingMetaData();
 }
 
 const DoMotivate = (playerid) => {
@@ -142,12 +146,23 @@ const GetStartupData = () => {
     return fetchData(x, sig);
 }
 
-const GetOutPostShipData = () => {
+const GetOPSBuldingData = () => {
   var x = [{}];
   x[0]["__class__"] = "ServerRequest";
   x[0]["requestData"] = ["cultural_outpost"];
   x[0]["requestClass"] = "CityMapService";
   x[0]["requestMethod"] = "getCityMap";
+  x[0]["requestId"] = FoBCore.getNextRequestID();
+  let sig = calcSig(x);
+  return fetchData(x, sig);
+}
+
+const GetOPSBuildingMetaData = () => {
+  var x = [{}];
+  x[0]["__class__"] = "ServerRequest";
+  x[0]["requestData"] = [];
+  x[0]["requestClass"] = "AdvancementService";
+  x[0]["requestMethod"] = "getAll";
   x[0]["requestId"] = FoBCore.getNextRequestID();
   let sig = calcSig(x);
   return fetchData(x, sig);
@@ -427,6 +442,7 @@ exports.GetNeighbor = GetNeighbor;
 exports.GetLGs = GetLGs;
 exports.GetEntities = GetEntities;
 exports.GetStartup = GetStartup;
-exports.GetOutPostShip = GetOutPostShip;
+exports.GetOPSBuildings = GetOPSBuildings;
+exports.GetOPSBuildingMeta = GetOPSBuildingMeta;
 exports.GetMetaDataUrls = GetMetaDataUrls;
 exports.GetAllWorld = GetAllWorld;

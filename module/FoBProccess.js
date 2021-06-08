@@ -15,8 +15,24 @@ var AllBuildings = [];
 var ResidentialDict = [];
 var DProductionDict = [];
 var DGoodProductionDict = [];
+
 var DResidentialDict = [];
 var BuildingsDict = [];
+
+
+var OPSBuildingsDict = [];
+var OPSGoodDict = [];
+var OPSProductionDict = [];
+var OPSResidentialDict = [];
+
+var DOPSResidentialDict = [];
+var DOPSProductionDict = [];
+var DOPSGoodDict = [];
+var DOPSGoodProductionDict = [];
+
+var OPSResourceDefinitions = [];
+
+
 
 var AllBoosts = {
     'happiness_amount': 0,
@@ -394,33 +410,31 @@ function GetBuildings(data) {
     exports.BuildingsDict = BuildingsDict;
 }
 
-function GetOutPostShipBuildings(data) {
-  for (let i = 0; i < data.length; i++) {
-    const resData = data[i];
-    if (resData["requestClass"] === "CityMapService" && resData["requestMethod"] === "getCityMap") {
-      if (resData["responseData"].hasOwnProperty("entities")) {
-        BuildingsDict = BuildingsDict.concat(resData["responseData"]["entities"]);
-      }
-      // for (const key in resData["responseData"]) {
-      //   if (resData["responseData"].hasOwnProperty(key)) {
-      //     const item = resData["responseData"][key];
-      //     console.log('==item["__class__"]==', key)
-      //     if (key === "entities") {
-      //       BuildingsDict = BuildingsDict.concat(item[key]);
-      //       // console.log('=====item["entities"]====', item["entities"])
-      //       // const cityEntityId = item.hasOwnProperty("cityentity_id")
-      //       //   ? item["cityentity_id"] : "";
-      //       // const type = item.hasOwnProperty("type")
-      //       //   ? item["type"] : "";
-      //       // if (["J_Vikings_Diplomacy4"].indexOf(cityEntityId) > -1 || ["cultural_goods_production"].indexOf(type) > -1) {
-      //       //   BuildingsDict = item["entities"];
-      //       // }
-      //     }
-      //   }
-      // }
-    }
-  }
-  exports.BuildingsDict = BuildingsDict;
+function GetOPSBuildings(data) {
+  OPSBuildingsDict = [];
+  const rsOPS = data.find(d => d.requestClass === 'CityMapService' && d.requestMethod === 'getCityMap');
+  if (rsOPS === undefined) return;
+
+  const entities = rsOPS.responseData.entities;
+  // entities.map(e => {
+  //   if (e.state.current_product !== undefined
+  //      && !e.state.current_product.hasOwnProperty('product')) {
+  //     e.state.current_product.product = e.state.current_product.resources;
+  //   }
+  // })
+  OPSBuildingsDict = entities;
+
+  exports.OPSBuildingsDict = OPSBuildingsDict;
+}
+
+function GetOPSResourceDefinitions(data) {
+  OPSResourceDefinitions = [];
+  const rsOPS = data.find(d => d.requestClass === 'AdvancementService' && d.requestMethod === 'getAll');
+  if (rsOPS === undefined) return;
+  rsOPS.responseData.forEach(d => {
+    OPSResourceDefinitions.push(d);
+  })
+  exports.OPSResourceDefinitions = OPSResourceDefinitions;
 }
 
 function GetHappinesBoost() {
@@ -488,7 +502,7 @@ function GetAllBuildings(metaCity) {
                 width: j[i]['width'],
                 height: j[i]['length'],
                 type: j[i]['type'],
-                provided_happiness: j[i]['provided_happiness'] || 0,
+                provided_happiness: j[i]['provided_happiness'],
                 population: undefined,
                 entity_levels: j[i]['entity_levels'],
                 available_products: j[i]['available_products'],
@@ -506,7 +520,7 @@ function GetAllBuildings(metaCity) {
                 }
             }
 
-            if (j[i]['staticResources'] !== undefined && j[i]['staticResources']['resources'] !== undefined) {
+            if (j[i]['type'] === 'cultural_goods_production') {
                 BuildingNamesi18n[j[i]['asset_id']]['population'] = j[i]['staticResources']['resources']['population'];
             }
         }
@@ -530,23 +544,12 @@ function GetOwnBuildings() {
                     cb["name"] = mb.name;
                     cb["available_products"] = mb["available_products"];
                     cb["type"] = mb["type"];
-                    const availableProds = cb["available_products"];
-
-                    const isProduct =
-                       availableProds!== undefined
-                    && typeof availableProds === 'object' && availableProds.length > 0
-                    && availableProds[0].hasOwnProperty('__class__')
-                    && availableProds[0]['__class__'] === 'CityEntityProductionProduct'
-                    && availableProds[0].hasOwnProperty('production_time');
                     if (cb.type === 'production' && cb['connected'] && FoBCore.hasOnlySupplyProduction(cb["available_products"]))
                         ProductionDict.push(cb);
                     else if (cb.type === 'residential' && cb['connected'])
                         ResidentialDict.push(cb);
                     else if (cb.type === 'goods' && cb['connected'])
                         GoodProdDict.push(cb);
-                    // else if (cb.type === 'diplomacy' && cb['connected'] && isProduct) {
-                    //     ProductionDict.push(cb);
-                    // }
                     else if (cb.type !== 'culture' && cb.type !== 'decoration' && cb.type !== 'street' && cb.type !== 'tower'&& cb.type !== 'military'&& cb['connected']) {
                         AllOtherDict.push(cb);
                     }
@@ -562,6 +565,48 @@ function GetOwnBuildings() {
     exports.BuildingsDict = BuildingsDict;
     exports.AllOtherDict = AllOtherDict;
 }
+
+function GetOwnOPSBuildings() {
+  OPSProductionDict = [];
+  OPSGoodDict = [];
+  OPSResidentialDict = [];
+
+  var city = OPSBuildingsDict;
+  var meta = AllBuildings;
+  for (let ci = 0; ci < city.length; ci++) {
+    const cb = city[ci];
+    for (const b in meta) {
+      if (meta.hasOwnProperty(b)) {
+        const mb = meta[b];
+        if (cb["cityentity_id"] === mb["id"]) {
+          cb["name"] = mb.name;
+          cb["available_products"] = mb["available_products"];
+          cb["type"] = mb["type"];
+          const availableProds = mb["available_products"];
+
+          const type = cb["type"];
+          const state = cb['state'];
+          const connected = cb['connected'];
+
+          if (type === 'diplomacy' && connected && FoBCore.hasOnlyCopperProduction(availableProds)) {
+            OPSGoodDict.push(cb);
+          } else if(type === 'residential' && connected) {
+            OPSResidentialDict.push(cb);
+          } else if(type === 'cultural_goods_production' && connected) {
+            OPSProductionDict.push(cb);
+          }
+        }
+      }
+    }
+  }
+
+  OPSBuildingsDict = city;
+  exports.OPSBuildingsDict = OPSBuildingsDict;
+  exports.OPSProductionDict = OPSProductionDict;
+  exports.OPSGoodDict = OPSGoodDict;
+  exports.OPSResidentialDict = OPSResidentialDict;
+}
+
 function GetBoosts() {
     var d = BuildingsDict;
 
@@ -720,6 +765,118 @@ function GetDistinctProductList(Grouped) {
     exports.DProductionDict = DProductionDict;
     exports.DAllOtherDict = DAllOtherDict;
 }
+
+function GetDistinctOutPostShipProductList(Grouped) {
+  DOPSResidentialDict = [];
+  DOPSProductionDict = [];
+  DOPSGoodDict = [];
+
+
+  var add = true;
+  for (let i = 0; i < OPSProductionDict.length; i++) {
+    const prod = OPSProductionDict[i];
+    if (DOPSProductionDict.length === 0) { DOPSProductionDict.push({ count: 1, prod: prod }); continue; }
+    for (let j = 0; j < DOPSProductionDict.length; j++) {
+      const dProd = DOPSProductionDict[j];
+      if (prod["state"]["__class__"] === "ProducingState") {
+        if (prod["cityentity_id"] === dProd.prod["cityentity_id"] && Grouped) {
+          var range = { min: dProd.prod.state["next_state_transition_at"] - 5, max: dProd.prod.state["next_state_transition_at"] + 5 };
+          if (range.min < prod.state["next_state_transition_at"] < range.max) {
+            if (dProd.prod.state["next_state_transition_at"] < prod.state["next_state_transition_at"])
+              dProd.prod.state["next_state_transition_at"] = prod.state["next_state_transition_at"];
+            dProd.count += 1;
+            add = false;
+          }
+        }
+        if (add) add = true;
+      } else {
+        if (prod["cityentity_id"] === dProd.prod["cityentity_id"] && Grouped) {
+          dProd.count += 1;
+          add = false;
+        }
+        if (add) add = true;
+      }
+    }
+    if (add)
+      DOPSProductionDict.push({ count: 1, prod: prod });
+    add = true;
+  }
+  DOPSProductionDict.sort(function(a, b){
+    if(a.prod["cityentity_id"] < b.prod["cityentity_id"]) { return -1; }
+    if(a.prod["cityentity_id"] > b.prod["cityentity_id"]) { return 1; }
+    return 0;
+  })
+
+  add = true;
+  for (let i = 0; i < OPSGoodDict.length; i++) {
+    const goodProd = OPSGoodDict[i];
+    if (DOPSGoodProductionDict.length === 0) { DOPSGoodProductionDict.push({ count: 1, prod: goodProd }); continue; }
+    for (let j = 0; j < DOPSGoodProductionDict.length; j++) {
+      const dGoodProd = DOPSGoodProductionDict[j];
+      if (goodProd["state"]["__class__"] === "ProducingState") {
+        if (goodProd["cityentity_id"] === dGoodProd.prod["cityentity_id"] && Grouped) {
+          var range = { min: dGoodProd.prod.state["next_state_transition_at"] - 5, max: dGoodProd.prod.state["next_state_transition_at"] + 5 };
+          if (range.min < goodProd.state["next_state_transition_at"] < range.max) {
+            if (dGoodProd.prod.state["next_state_transition_at"] < goodProd.state["next_state_transition_at"])
+              dGoodProd.prod.state["next_state_transition_at"] = goodProd.state["next_state_transition_at"];
+            dGoodProd.count += 1;
+            add = false;
+          }
+        }
+        if (add) add = true;
+      } else {
+        if (goodProd["cityentity_id"] === dGoodProd.prod["cityentity_id"]&& Grouped) {
+          dGoodProd.count += 1;
+          add = false;
+        }
+        if (add) add = true;
+      }
+    }
+    if (add)
+      DOPSGoodProductionDict.push({ count: 1, prod: goodProd });
+    add = true;
+  }
+  DOPSGoodProductionDict.sort(function(a, b){
+    if(a.prod["cityentity_id"] < b.prod["cityentity_id"]) { return -1; }
+    if(a.prod["cityentity_id"] > b.prod["cityentity_id"]) { return 1; }
+    return 0;
+  })
+
+  add = true;
+  for (let i = 0; i < OPSResidentialDict.length; i++) {
+    const res = OPSResidentialDict[i];
+    if (DOPSResidentialDict.length === 0) { DOPSResidentialDict.push({ count: 1, res: res }); continue; }
+    for (let j = 0; j < DOPSResidentialDict.length; j++) {
+      const dRes = DOPSResidentialDict[j];
+      if (res["state"]["__class__"] === "ProducingState") {
+        if (res["cityentity_id"] === dRes.res["cityentity_id"]) {
+          var range = { min: dRes.res.state["next_state_transition_in"] - 5, max: dRes.res.state["next_state_transition_in"] + 5 };
+          if (range.min < res.state["next_state_transition_at"] < range.max) {
+            if (dRes.res.state["next_state_transition_at"] < res.state["next_state_transition_at"])
+              dRes.res.state["next_state_transition_at"] = res.state["next_state_transition_at"];
+            dRes.count += 1;
+            add = false;
+          }
+        }
+        if (add) add = true;
+      } else {
+        if (res["cityentity_id"] === dRes.res["cityentity_id"]) {
+          dRes.count += 1;
+          add = false;
+        }
+        if (add) add = true;
+      }
+    }
+    if (add)
+      DOPSResidentialDict.push({ count: 1, res: res });
+    add = true;
+  }
+
+  exports.DOPSResidentialDict = DOPSResidentialDict;
+  exports.DOPSProductionDict = DOPSProductionDict;
+  exports.DOPSGoodProductionDict = DOPSGoodProductionDict;
+}
+
 function SetGoodsDict(dict) {
     GoodsDict = dict;
     exports.GoodsDict = GoodsDict;
@@ -849,6 +1006,7 @@ function clearLists() {
 exports.AllBuildings = AllBuildings;
 exports.OwnTavernData = OwnTavernData;
 exports.BuildingsDict = BuildingsDict;
+
 exports.ResidentialDict = ResidentialDict;
 exports.ProductionDict = ProductionDict;
 exports.GoodProdDict = GoodProdDict;
@@ -857,14 +1015,24 @@ exports.DProductionDict = DProductionDict;
 exports.GoodsDict = GoodsDict;
 exports.SetGoodsDict = SetGoodsDict;
 
+exports.OPSBuildingsDict = OPSBuildingsDict;
+exports.OPSGoodDict = OPSGoodDict;
+exports.OPSProductionDict = OPSProductionDict;
+exports.OPSResourceDefinitions = OPSResourceDefinitions;
+exports.DOPSProductionDict = DOPSProductionDict;
+exports.DOPSGoodDict = DOPSGoodDict;
+exports.GetOPSResourceDefinitions = GetOPSResourceDefinitions;
+exports.GetOwnOPSBuildings = GetOwnOPSBuildings;
+
 exports.GetDistinctProductList = GetDistinctProductList;
+exports.GetDistinctOutPostShipProductList = GetDistinctOutPostShipProductList;
 exports.GetHappinesBoost = GetHappinesBoost;
 exports.GetOwnBuildings = GetOwnBuildings;
 exports.GetAllBuildings = GetAllBuildings;
 exports.GetRewardResult = GetRewardResult;
 exports.GetBoosts = GetBoosts;
 exports.GetBuildings = GetBuildings;
-exports.GetOutPostShipBuildings = GetOutPostShipBuildings;
+exports.GetOPSBuildings = GetOPSBuildings;
 exports.GetUserData = GetUserData;
 exports.GetHiddenRewards = GetHiddenRewards;
 exports.GetResourceDefinitions = GetResourceDefinitions;

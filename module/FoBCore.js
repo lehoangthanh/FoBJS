@@ -11,6 +11,7 @@ exports.getRandomInt = getRandomInt;
 exports.getRandomIntervall = getRandomIntervall;
 exports.getNextRequestID = getNextRequestID;
 exports.hasOnlySupplyProduction = hasOnlySupplyProduction;
+exports.hasOnlyCopperProduction = hasOnlyCopperProduction;
 exports.GetP1 = GetP1;
 exports.GetDistinctCount = GetDistinctCount;
 exports.getGoodsProductionOptions = getGoodsProductionOptions;
@@ -62,6 +63,19 @@ function hasOnlySupplyProduction(availableProducts) {
     }
     return checkBool.every((v) => v === true);
 }
+
+function hasOnlyCopperProduction(availableProducts) {
+  var checkBool = [false, false, false, false, false, false];
+  for (let x = 0; x < availableProducts.length; x++) {
+    const product = availableProducts[x];
+    if (undefined !== product["product"])
+      if (undefined !== product["product"]["resources"])
+        if (undefined !== product["product"]["resources"]["copper_coins"])
+          checkBool[x] = true;
+  }
+  return checkBool.every((v) => v === true);
+}
+
 function printWelcomeMessage(Gwin, xapp, printLogin = true) {
     Gwin.webContents.send('print', "#########################################################################");
     Gwin.webContents.send('print', "#########################################################################");

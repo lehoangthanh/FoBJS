@@ -62,6 +62,7 @@
         "Window.Tab.Tavern": "Tavern",
         "Window.Tab.Bots":"Bots",
         "Window.Tab.Production": "Production",
+        "Window.Tab.OutPostShipProductionList": "Out Post Ship",
         "Window.Tab.Manually": "Manually",
         "Overview.CurrentWorld" : "Current World:",
         "Overview.Player": "Player:",

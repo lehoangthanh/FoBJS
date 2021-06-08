@@ -470,7 +470,6 @@ function GetData(clear = true, callback = null, dorefresh = true) {
                                     const QuestService = body.find(rq => rq.requestClass === 'QuestService');
                                     const OutPostQuest = QuestService.responseData.find(qs => qs.category === 'outpost');
 
-
                                     UserData = processer.GetUserData(body);
                                     processer.GetResourceDefinitions(body);
                                     processer.GetTavernInfo(body);
@@ -478,17 +477,24 @@ function GetData(clear = true, callback = null, dorefresh = true) {
                                     processer.GetOwnTavernInfo(body);
                                     processer.GetHiddenRewards(body);
                                     processer.GetBuildings(body);
-                                  if (OutPostQuest !== undefined) {
-                                    builder.GetOutPostShip().then(_dataOutPost => {
-                                      processer.GetOutPostShipBuildings(_dataOutPost);
-                                    })
-                                  }
                                     FoBFunctions.ArcBonus = processer.GetArcBonus(body);
                                     builder.GetMetaDataUrls(body, "city_entities").then(jsonbody => {
                                         if (jsonbody !== null) {
                                             processer.GetAllBuildings(jsonbody);
                                             processer.GetOwnBuildings();
                                             processer.GetDistinctProductList(!store.get("DetailedDisplay"));
+                                          if (OutPostQuest !== undefined) {
+                                            builder.GetOPSBuildingMeta().then(OPSBuildingMeta => {
+                                              processer.GetOPSResourceDefinitions(OPSBuildingMeta);
+                                              builder.GetOPSBuildings().then(OPSBuilding => {
+                                                processer.GetOPSBuildings(OPSBuilding);
+                                                processer.GetOwnOPSBuildings();
+                                                processer.GetDistinctOutPostShipProductList(!store.get("DetailedDisplay"));
+                                              })
+                                            })
+
+                                          }
+
                                         }
                                         var StartUpBody = body;
                                         builder.DoGetOwnTavern()
@@ -522,6 +528,9 @@ function GetData(clear = true, callback = null, dorefresh = true) {
 
 var tableProductionList = undefined;
 var buildingContent = undefined;
+
+var tableOPSProductionList = undefined;
+var buildingOPSContent = undefined;
 var lastSend = new Date()
 
 function PrepareInfoMenu() {
@@ -549,11 +558,19 @@ function PrepareInfoMenu() {
     var tableBots = fs.readFileSync(filePath, 'utf8');
     filePath = path.join(asarPath, 'html', 'tableContent', 'tableProductionList.html');
     tableProductionList = fs.readFileSync(filePath, 'utf8');
+
+    filePath = path.join(asarPath, 'html', 'tableContent', 'tableOPSProductionList.html');
+    tableOPSProductionList = fs.readFileSync(filePath, 'utf8');
+
     filePath = path.join(asarPath, 'html', 'tableContent', 'tableManually.html');
     var tableManually = fs.readFileSync(filePath, 'utf8');
 
     filePath = path.join(asarPath, 'html', 'insertContent', 'building.html');
     buildingContent = fs.readFileSync(filePath, 'utf8');
+
+    filePath = path.join(asarPath, 'html', 'insertContent', 'buildingOutPostShip.html');
+    buildingOPSContent = fs.readFileSync(filePath, 'utf8');
+
     filePath = path.join(asarPath, 'html', 'insertContent', 'goods.html');
     var goodsContent = fs.readFileSync(filePath, 'utf8');
     filePath = path.join(asarPath, 'html', 'insertContent', 'inactiveFriends.html');
@@ -567,6 +584,10 @@ function PrepareInfoMenu() {
     var dGoodProdList = processer.DGoodProductionDict /*processer.GoodProdDict*/;
     var dOtherList = processer.DAllOtherDict /*processer.AllOtherDict*/;
     var dResidList = processer.DResidentialDict /*processer.ResidentialDict*/;
+
+    var dOPSProdList = processer.DOPSProductionDict;
+    var dOPSGoodProdList = processer.DOPSGoodProductionDict;
+    var dOPSResidList = processer.DOPSResidentialDict;
 
     NeighborMoppelDict = NeighborDict.filter((f) => f.canMotivate);
     FriendsMoppelDict = FriendsDict.filter((f) => f.canMotivate);
@@ -708,12 +729,27 @@ function PrepareInfoMenu() {
     // displayList(dResidList);
     // addDivision()
     // displayList(dOtherList);
+
+    displayListOPS(dOPSProdList);
+    addDivision()
+    displayListOPS(dOPSGoodProdList);
+    // addDivision()
+    // displayListOPS(dOPSResidList);
+
+
     tableProductionList = tableProductionList
         .replace("###Building###", "")
         .replace("###Production.Heading###", i18n("Production.Heading"))
         .replace("###Production.Building###", i18n("Production.Building"))
         .replace("###Production.Product###", i18n("Production.Product"))
         .replace("###Production.State###", i18n("Production.State"));
+
+  tableOPSProductionList = tableOPSProductionList
+    .replace("###Building###", "")
+    .replace("###Production.Heading###", i18n("Production.Heading"))
+    .replace("###Production.Building###", i18n("Production.Building"))
+    .replace("###Production.Product###", i18n("Production.Product"))
+    .replace("###Production.State###", i18n("Production.State"));
 
     var visHidden = processer.HiddenRewards.filter((reward) => {
         if (reward.position === "cityRoadBig") {
@@ -762,12 +798,14 @@ function PrepareInfoMenu() {
         .replace("###Tavern###", tableTavern)
         .replace("###Bots###", tableBots)
         .replace("###ProductionList###", tableProductionList)
+        .replace("###OutPostShipProductionList###", tableOPSProductionList)
         .replace("###Manually###", tableManually)
         .replace("###Window.Tab.Overview###", i18n("Window.Tab.Overview"))
         .replace("###Window.Tab.OtherPlayers###", i18n("Window.Tab.OtherPlayers"))
         .replace("###Window.Tab.Tavern###", i18n("Window.Tab.Tavern"))
         .replace("###Window.Tab.Bots###", i18n("Window.Tab.Bots"))
         .replace("###Window.Tab.Production###", i18n("Window.Tab.Production"))
+        .replace("###Window.Tab.OutPostShipProductionList###", i18n("Window.Tab.OutPostShipProductionList"))
         .replace("###Window.Tab.Manually###", i18n("Window.Tab.Manually"));
 
     filePath = path.join(asarPath, 'html', 'index.html');
@@ -884,6 +922,96 @@ function displayList(dList){
             .replace("###id###", key)
         tableProductionList = tableProductionList.replace("###Building###", localContent);
     }
+}
+
+function displayListOPS(dList){
+  for (let _key in dList) {
+    if (!dList.hasOwnProperty(_key)) return;
+    var localContent = buildingOPSContent;
+    var prod = (dList[_key]["prod"] !== undefined) ? dList[_key].prod : ((dList[_key]["res"] !== undefined) ? dList[_key].res : null);
+    /* var prod = dList[_key]; */
+    if (prod == null) continue;
+    var count = dList[_key].count;
+    var prodName = s = production = i18n("Production.Idle");
+    var prodResouceProd = 0;
+    if(dList[_key]["prod"] !== undefined) {
+      prodName = prod["name"]
+        if(prod["state"]["current_product"] === undefined) {
+          prodResouceProd = 0;
+        } else {
+          production = Object.keys(prod['state']['current_product']['resources']['resources'])[0];
+          prodResouceProd = prod["state"]["current_product"]["resources"]["resources"][production];
+        }
+    } else {
+      prodName = prod["name"]
+      production = Object.keys(prod['state']['current_product']['product']['resources'])[0];
+      prodResouceProd = prod["state"]["current_product"]["product"]["resources"][production];
+    }
+    var key = prod["id"];
+    if (prod["state"]["__class__"] === "ProducingState") {
+      var end = moment.unix(prod["state"]["next_state_transition_at"]);
+      var start = moment.unix(Math.round(new Date().getTime() / 1000));
+      if ((start.isAfter(end) || start.isSame(end)) && ProductionTimer[key] !== undefined) {
+        ProductionTimer[key]["finished"] = true;
+        ProductionTimer[key]["string_state"] = i18n("Production.Finished");
+        ProductionTimer[key]["nextStateAt"] = 0;
+        ProductionTimer[key]["nextStateIn"] = 0;
+        ProductionTimer[key]["key"] = key;
+        ProductionTimer[key]["ProdBotRunning"] = BotsRunning.ProductionBot;
+      }
+      else {
+        if (ProductionTimer[key] === undefined) {
+          ProductionTimer[key] = {};
+        }
+        ProductionTimer[key]["string_state"] = i18n("Production.Producing");
+        ProductionTimer[key]["finished"] = false;
+        ProductionTimer[key]["nextStateAt"] = prod["state"]["next_state_transition_at"];
+        ProductionTimer[key]["nextStateIn"] = prod["state"]["next_state_transition_in"];
+        ProductionTimer[key]["key"] = key;
+        ProductionTimer[key]["ProdBotRunning"] = BotsRunning.ProductionBot;
+        s = "producing (default)"
+        // if (DetailedDisplay) {
+          prodName = `${prodResouceProd} ${prodName}`;
+        // }else{
+        //   prodName = count + "x " + prod["state"]["current_product"]["resources"]["resources"][production] + " " + prod["name"] + ` (${count * prod["state"]["current_product"]["resources"]["resources"][production]})`;
+        // }
+      }
+    }
+    else if (prod["state"]["__class__"] === "IdleState") {
+      if (ProductionTimer[key] === undefined) {
+        ProductionTimer[key] = {};
+      }
+      ProductionTimer[key]["string_state"] = i18n("Production.Idle");
+      ProductionTimer[key]["finished"] = false;
+      ProductionTimer[key]["nextStateAt"] = 0;
+      ProductionTimer[key]["nextStateIn"] = 0;
+      ProductionTimer[key]["key"] = key;
+      ProductionTimer[key]["ProdBotRunning"] = BotsRunning.ProductionBot;
+      s = "idle (default)"
+    }
+    else if (prod["state"]["__class__"] === "ProductionFinishedState") {
+      s = "finished (default)";
+
+      prodName = `${count} x ${prodName} ${count * prodResouceProd}`;
+      if (ProductionTimer[key] === undefined) {
+        ProductionTimer[key] = {};
+      }
+      ProductionTimer[key]["string_state"] = i18n("Production.Finished");
+      ProductionTimer[key]["finished"] = true;
+      ProductionTimer[key]["nextStateAt"] = 0;
+      ProductionTimer[key]["nextStateIn"] = 0;
+      ProductionTimer[key]["key"] = key;
+      ProductionTimer[key]["ProdBotRunning"] = BotsRunning.ProductionBot;
+    };
+
+    localContent = localContent
+      .replace("###BuildName###", DetailedDisplay ? prod["name"]:count + "x " + prod["name"])
+      .replace("###ProdName###", prodName)
+      .replace("###ProdState###", s)
+      .replace("###id###", key)
+  
+    tableOPSProductionList = tableOPSProductionList.replace("###Building###", localContent);
+  }
 }
 
 function cbwDomReady() {
