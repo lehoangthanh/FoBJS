@@ -21,13 +21,12 @@ var BuildingsDict = [];
 
 
 var OPSBuildingsDict = [];
-var OPSGoodDict = [];
+var OPSGoodProdDict = [];
 var OPSProductionDict = [];
 var OPSResidentialDict = [];
 
 var DOPSResidentialDict = [];
 var DOPSProductionDict = [];
-var DOPSGoodDict = [];
 var DOPSGoodProductionDict = [];
 
 var OPSResourceDefinitions = [];
@@ -568,7 +567,7 @@ function GetOwnBuildings() {
 
 function GetOwnOPSBuildings() {
   OPSProductionDict = [];
-  OPSGoodDict = [];
+  OPSGoodProdDict = [];
   OPSResidentialDict = [];
 
   var city = OPSBuildingsDict;
@@ -589,11 +588,11 @@ function GetOwnOPSBuildings() {
           const connected = cb['connected'];
 
           if (type === 'diplomacy' && connected && FoBCore.hasOnlyCopperProduction(availableProds)) {
-            OPSGoodDict.push(cb);
-          } else if(type === 'residential' && connected) {
+            OPSProductionDict.push(cb);
+          } else if(['residential', 'main_building'].indexOf(type) > -1 && connected) {
             OPSResidentialDict.push(cb);
           } else if(type === 'cultural_goods_production' && connected) {
-            OPSProductionDict.push(cb);
+            OPSGoodProdDict.push(cb);
           }
         }
       }
@@ -603,8 +602,12 @@ function GetOwnOPSBuildings() {
   OPSBuildingsDict = city;
   exports.OPSBuildingsDict = OPSBuildingsDict;
   exports.OPSProductionDict = OPSProductionDict;
-  exports.OPSGoodDict = OPSGoodDict;
+  exports.OPSGoodProdDict = OPSGoodProdDict;
   exports.OPSResidentialDict = OPSResidentialDict;
+  // console.log('===OPSBuildingsDict===', JSON.stringify(OPSBuildingsDict));
+  // console.log('===OPSProductionDict===', JSON.stringify(OPSProductionDict));
+  // console.log('===OPSGoodProdDict===', JSON.stringify(OPSGoodProdDict));
+  // console.log('===OPSResidentialDict===', JSON.stringify(OPSResidentialDict));
 }
 
 function GetBoosts() {
@@ -769,8 +772,7 @@ function GetDistinctProductList(Grouped) {
 function GetDistinctOutPostShipProductList(Grouped) {
   DOPSResidentialDict = [];
   DOPSProductionDict = [];
-  DOPSGoodDict = [];
-
+  DOPSGoodProductionDict = [];
 
   var add = true;
   for (let i = 0; i < OPSProductionDict.length; i++) {
@@ -808,8 +810,8 @@ function GetDistinctOutPostShipProductList(Grouped) {
   })
 
   add = true;
-  for (let i = 0; i < OPSGoodDict.length; i++) {
-    const goodProd = OPSGoodDict[i];
+  for (let i = 0; i < OPSGoodProdDict.length; i++) {
+    const goodProd = OPSGoodProdDict[i];
     if (DOPSGoodProductionDict.length === 0) { DOPSGoodProductionDict.push({ count: 1, prod: goodProd }); continue; }
     for (let j = 0; j < DOPSGoodProductionDict.length; j++) {
       const dGoodProd = DOPSGoodProductionDict[j];
@@ -875,6 +877,9 @@ function GetDistinctOutPostShipProductList(Grouped) {
   exports.DOPSResidentialDict = DOPSResidentialDict;
   exports.DOPSProductionDict = DOPSProductionDict;
   exports.DOPSGoodProductionDict = DOPSGoodProductionDict;
+  // console.log('==DOPSResidentialDict===', JSON.stringify(DOPSResidentialDict))
+  // console.log('==DOPSProductionDict===', JSON.stringify(DOPSProductionDict))
+  // console.log('==DOPSGoodProductionDict===', JSON.stringify(DOPSGoodProductionDict))
 }
 
 function SetGoodsDict(dict) {
@@ -1016,11 +1021,11 @@ exports.GoodsDict = GoodsDict;
 exports.SetGoodsDict = SetGoodsDict;
 
 exports.OPSBuildingsDict = OPSBuildingsDict;
-exports.OPSGoodDict = OPSGoodDict;
+exports.OPSGoodProdDict = OPSGoodProdDict;
 exports.OPSProductionDict = OPSProductionDict;
 exports.OPSResourceDefinitions = OPSResourceDefinitions;
 exports.DOPSProductionDict = DOPSProductionDict;
-exports.DOPSGoodDict = DOPSGoodDict;
+exports.DOPSGoodProductionDict = DOPSGoodProductionDict;
 exports.GetOPSResourceDefinitions = GetOPSResourceDefinitions;
 exports.GetOwnOPSBuildings = GetOwnOPSBuildings;
 

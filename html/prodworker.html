@@ -17,6 +17,11 @@
     var ProdDict = [];
     var ResDict = [];
     var GoodProdDict = [];
+
+    var OPSProdDict = [];
+    var OPSRestDict = [];
+    var OPSGoodProdDict = [];
+
     const eState = { Producing: 1, Idle: 2, Finished: 3 };
 
     ipcRenderer.send('worker_loaded', true);
@@ -25,6 +30,9 @@
       ProdDict = d.ProdDict;
       ResDict = d.ResDict;
       GoodProdDict = d.GoodProdDict;
+      OPSProdDict = d.OPSProdDict;
+      OPSRestDict = d.OPSRestDict;
+      OPSGoodProdDict = d.OPSGoodProdDict;
       startWorker();
     });
 
@@ -32,6 +40,9 @@
       ProdDict = d.ProdDict;
       ResDict = d.ResDict
       GoodProdDict = d.GoodProdDict;
+      OPSProdDict = d.OPSProdDict;
+      OPSRestDict = d.OPSRestDict;
+      OPSGoodProdDict = d.OPSGoodProdDict;
       if (d.x >= 1)
         DoWorker();
     });
@@ -52,7 +63,7 @@
     }
 
     function DoWorker() {
-      ipcRenderer.send('DoWork', { ProdDict, ResDict, GoodProdDict });
+      ipcRenderer.send('DoWork', { ProdDict, ResDict, GoodProdDict, OPSProdDict, OPSRestDict, OPSGoodProdDict });
     }
 
   </script>

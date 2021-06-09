@@ -490,6 +490,11 @@ function GetData(clear = true, callback = null, dorefresh = true) {
                                                 processer.GetOPSBuildings(OPSBuilding);
                                                 processer.GetOwnOPSBuildings();
                                                 processer.GetDistinctOutPostShipProductList(!store.get("DetailedDisplay"));
+                                                // if(dorefresh) {
+                                                //   setTimeout(() => {
+                                                //     PrepareInfoMenu();
+                                                //   }, 1000 * 5);
+                                                // }
                                               })
                                             })
 
@@ -731,10 +736,10 @@ function PrepareInfoMenu() {
     // displayList(dOtherList);
 
     displayListOPS(dOPSProdList);
-    addDivision()
+    addDivisionOPS();
     displayListOPS(dOPSGoodProdList);
-    // addDivision()
-    // displayListOPS(dOPSResidList);
+    addDivisionOPS();
+    displayListOPS(dOPSResidList);
 
 
     tableProductionList = tableProductionList
@@ -848,6 +853,11 @@ function addDivision(){
         .replace("###Building###", "<tr><td style=\"width: auto; text-align: center;\" colspan=\"3\"><hr /></td></tr>###Building###")
 }
 
+function addDivisionOPS(){
+  tableOPSProductionList = tableOPSProductionList
+    .replace("###Building###", "<tr><td style=\"width: auto; text-align: center;\" colspan=\"3\"><hr /></td></tr>###Building###")
+}
+
 function displayList(dList){
     for (let _key in dList) {
 
@@ -938,7 +948,12 @@ function displayListOPS(dList){
       prodName = prod["name"]
         if(prod["state"]["current_product"] === undefined) {
           prodResouceProd = 0;
+        } else if(prod['state']['current_product']['product'] !== undefined) {
+
+          production = Object.keys(prod['state']['current_product']['product']['resources'])[0];
+          prodResouceProd = prod["state"]["current_product"]["product"]["resources"][production];
         } else {
+
           production = Object.keys(prod['state']['current_product']['resources']['resources'])[0];
           prodResouceProd = prod["state"]["current_product"]["resources"]["resources"][production];
         }
@@ -970,11 +985,12 @@ function displayListOPS(dList){
         ProductionTimer[key]["key"] = key;
         ProductionTimer[key]["ProdBotRunning"] = BotsRunning.ProductionBot;
         s = "producing (default)"
-        // if (DetailedDisplay) {
+        if (DetailedDisplay) {
           prodName = `${prodResouceProd} ${prodName}`;
-        // }else{
-        //   prodName = count + "x " + prod["state"]["current_product"]["resources"]["resources"][production] + " " + prod["name"] + ` (${count * prod["state"]["current_product"]["resources"]["resources"][production]})`;
-        // }
+        }else{
+          // prodName = count + "x " + prod["state"]["current_product"]["resources"]["resources"][production] + " " + prod["name"] + ` (${count * prod["state"]["current_product"]["resources"]["resources"][production]})`;
+          prodName = `${count}x ${prodResouceProd} ${production} (${count*prodResouceProd})`
+        }
       }
     }
     else if (prod["state"]["__class__"] === "IdleState") {
@@ -1002,7 +1018,7 @@ function displayListOPS(dList){
       ProductionTimer[key]["nextStateIn"] = 0;
       ProductionTimer[key]["key"] = key;
       ProductionTimer[key]["ProdBotRunning"] = BotsRunning.ProductionBot;
-    };
+    }
 
     localContent = localContent
       .replace("###BuildName###", DetailedDisplay ? prod["name"]:count + "x " + prod["name"])

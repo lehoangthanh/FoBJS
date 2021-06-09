@@ -17,6 +17,10 @@ var ProdDict = [];
 var ResDict = [];
 var GoodProdDict = [];
 
+var OPSProdDict = [];
+var OPSRestDict = [];
+var OPSGoodProdDict = [];
+
 function StartProductionBot() {
 
     var ProductionWorker = new BrowserWindow({
@@ -34,13 +38,18 @@ function StartProductionBot() {
         ProdDict = processer.ProductionDict;
         ResDict = processer.ResidentialDict;
         GoodProdDict = processer.GoodProdDict;
+
+        OPSProdDict = processer.OPSProductionDict;
+        OPSRestDict = processer.OPSResidentialDict;
+        OPSGoodProdDict = processer.OPSGoodProdDict;
+
         if (HasProdFinished()) {
             DoWork(false, () => {
-                PWW.webContents.send('start', { ProdDict, ResDict, GoodProdDict });
+                PWW.webContents.send('start', { ProdDict, ResDict, GoodProdDict, OPSProdDict, OPSRestDict, OPSGoodProdDict });
                 Main.BotsRunning.ProductionBot = true;
             });
         } else {
-            PWW.webContents.send('start', { ProdDict, ResDict, GoodProdDict });
+            PWW.webContents.send('start', { ProdDict, ResDict, GoodProdDict, OPSProdDict, OPSRestDict, OPSGoodProdDict });
             Main.BotsRunning.ProductionBot = true;
         }
     });
@@ -49,6 +58,9 @@ function StartProductionBot() {
         ProdDict = d.ProdDict;
         ResDict = d.ResDict;
         GoodProdDict = d.GoodProdDict;
+        OPSProdDict = d.OPSProdDict;
+        OPSRestDict = d.OPSRestDict;
+        OPSGoodProdDict = d.OPSGoodProdDict;
         DoWork();
     });
 }
@@ -138,6 +150,26 @@ function CollectManuel(origin,callGetData = true) {
                     promArr.push(FoBuilder.DoCollectProduction([otherUnit["id"]]));
                 }
             }
+
+          for (let i = 0; i < processer.OPSProductionDict.length; i++) {
+            const prodUnit = processer.OPSProductionDict[i];
+            if (prodUnit["state"]["__class__"] === "ProductionFinishedState") {
+              promArr.push(FoBuilder.DoCollectProduction([prodUnit["id"]]));
+            }
+          }
+
+          for (let i = 0; i < processer.OPSResidentialDict.length; i++) {
+            const resUnit = processer.OPSResidentialDict[i];
+            if (resUnit["state"]["__class__"] === "ProductionFinishedState") {
+              promArr.push(FoBuilder.DoCollectProduction([resUnit["id"]]));
+            }
+          }
+          for (let i = 0; i < processer.OPSGoodProdDict.length; i++) {
+            const goodUnit = processer.OPSGoodProdDict[i];
+            if (goodUnit["state"]["__class__"] === "ProductionFinishedState") {
+              promArr.push(FoBuilder.DoCollectProduction([goodUnit["id"]]));
+            }
+          }
             requestAmountList.push(promArr.length)
             FoBCore.debug(`Requests to be made: ${requestAmountList}`)
             Promise.all(promArr).then(values => {
@@ -178,6 +210,20 @@ function StartManuel(callGetData = true) {
                 promArr.push(FoBuilder.DoQueryProduction(goodUnit["id"], Main.CurrentGoodProduction.id));
             }
         }
+
+      for (let i = 0; i < processer.OPSProductionDict.length; i++) {
+        const prodUnit = processer.OPSProductionDict[i];
+        if (prodUnit["state"]["__class__"] === "IdleState") {
+          promArr.push(FoBuilder.DoQueryProduction(prodUnit["id"], Main.CurrentProduction.id));
+        }
+      }
+
+      for (let i = 0; i < processer.OPSGoodProdDict.length; i++) {
+        const goodUnit = processer.OPSGoodProdDict[i];
+        if (goodUnit["state"]["__class__"] === "IdleState") {
+          promArr.push(FoBuilder.DoQueryProduction(goodUnit["id"], Main.CurrentGoodProduction.id));
+        }
+      }
         Promise.all(promArr).then(values => {
             if (callGetData) {
                 Main.GetData(true, () => {
