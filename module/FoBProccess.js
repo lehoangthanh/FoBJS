@@ -19,7 +19,6 @@ var DGoodProductionDict = [];
 var DResidentialDict = [];
 var BuildingsDict = [];
 
-
 var OPSBuildingsDict = [];
 var OPSGoodProdDict = [];
 var OPSProductionDict = [];
@@ -28,10 +27,6 @@ var OPSResidentialDict = [];
 var DOPSResidentialDict = [];
 var DOPSProductionDict = [];
 var DOPSGoodProductionDict = [];
-
-var OPSResourceDefinitions = [];
-
-
 
 var AllBoosts = {
     'happiness_amount': 0,
@@ -236,6 +231,7 @@ function GetResourceDefinitions(data) {
             }
         }
     }
+
     exports.ResourceDefinitions = ResourceDefinitions;
 }
 function GetHiddenRewards(data) {
@@ -426,16 +422,6 @@ function GetOPSBuildings(data) {
   exports.OPSBuildingsDict = OPSBuildingsDict;
 }
 
-function GetOPSResourceDefinitions(data) {
-  OPSResourceDefinitions = [];
-  const rsOPS = data.find(d => d.requestClass === 'AdvancementService' && d.requestMethod === 'getAll');
-  if (rsOPS === undefined) return;
-  rsOPS.responseData.forEach(d => {
-    OPSResourceDefinitions.push(d);
-  })
-  exports.OPSResourceDefinitions = OPSResourceDefinitions;
-}
-
 function GetHappinesBoost() {
     let d = BuildingsDict;
     var BuildingsAll = [];
@@ -586,6 +572,7 @@ function GetOwnOPSBuildings() {
           const type = cb["type"];
           const state = cb['state'];
           const connected = cb['connected'];
+          const currentProduct = state['current_product'];
 
           if (type === 'diplomacy' && connected && FoBCore.hasOnlyCopperProduction(availableProds)) {
             OPSProductionDict.push(cb);
@@ -598,7 +585,6 @@ function GetOwnOPSBuildings() {
       }
     }
   }
-
   OPSBuildingsDict = city;
   exports.OPSBuildingsDict = OPSBuildingsDict;
   exports.OPSProductionDict = OPSProductionDict;
@@ -1023,10 +1009,8 @@ exports.SetGoodsDict = SetGoodsDict;
 exports.OPSBuildingsDict = OPSBuildingsDict;
 exports.OPSGoodProdDict = OPSGoodProdDict;
 exports.OPSProductionDict = OPSProductionDict;
-exports.OPSResourceDefinitions = OPSResourceDefinitions;
 exports.DOPSProductionDict = DOPSProductionDict;
 exports.DOPSGoodProductionDict = DOPSGoodProductionDict;
-exports.GetOPSResourceDefinitions = GetOPSResourceDefinitions;
 exports.GetOwnOPSBuildings = GetOwnOPSBuildings;
 
 exports.GetDistinctProductList = GetDistinctProductList;

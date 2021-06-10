@@ -206,8 +206,15 @@ function StartManuel(callGetData = true) {
         }
         for (let i = 0; i < processer.GoodProdDict.length; i++) {
             const goodUnit = processer.GoodProdDict[i];
+
             if (goodUnit["state"]["__class__"] === "IdleState") {
+              const idCurAvai = Main.CurrentGoodProduction.id - 1;
+              const requireCostResource = goodUnit["available_products"][idCurAvai]["requirements"]["cost"]["resources"];
+              const requireCostResourceKeys = Object.keys(requireCostResource);
+              const condReq = requireCostResourceKeys.filter(reqRes => processer.ResourceDict[reqRes] > requireCostResource[reqRes]);
+              if (condReq.length === requireCostResourceKeys.length) {
                 promArr.push(FoBuilder.DoQueryProduction(goodUnit["id"], Main.CurrentGoodProduction.id));
+              }
             }
         }
 
@@ -224,6 +231,8 @@ function StartManuel(callGetData = true) {
           promArr.push(FoBuilder.DoQueryProduction(goodUnit["id"], Main.CurrentGoodProduction.id));
         }
       }
+
+      if (promArr.length === 0) return promArr;
         Promise.all(promArr).then(values => {
             if (callGetData) {
                 Main.GetData(true, () => {

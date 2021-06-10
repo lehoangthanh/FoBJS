@@ -484,20 +484,17 @@ function GetData(clear = true, callback = null, dorefresh = true) {
                                             processer.GetOwnBuildings();
                                             processer.GetDistinctProductList(!store.get("DetailedDisplay"));
                                           if (OutPostQuest !== undefined) {
-                                            builder.GetOPSBuildingMeta().then(OPSBuildingMeta => {
-                                              processer.GetOPSResourceDefinitions(OPSBuildingMeta);
-                                              builder.GetOPSBuildings().then(OPSBuilding => {
-                                                processer.GetOPSBuildings(OPSBuilding);
-                                                processer.GetOwnOPSBuildings();
-                                                processer.GetDistinctOutPostShipProductList(!store.get("DetailedDisplay"));
-                                                // if(dorefresh) {
-                                                //   setTimeout(() => {
-                                                //     PrepareInfoMenu();
-                                                //   }, 1000 * 5);
-                                                // }
-                                              })
-                                            })
+                                            builder.GetOPSBuildings().then(OPSBuilding => {
+                                              processer.GetOPSBuildings(OPSBuilding);
+                                              processer.GetOwnOPSBuildings();
+                                              processer.GetDistinctOutPostShipProductList(!store.get("DetailedDisplay"));
+                                              // if(dorefresh) {
+                                              //   setTimeout(() => {
+                                              //     PrepareInfoMenu();
+                                              //   }, 1000 * 5);
+                                              // }
 
+                                            });
                                           }
 
                                         }
