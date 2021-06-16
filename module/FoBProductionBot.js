@@ -26,11 +26,13 @@ function StartProductionBot() {
     var ProductionWorker = new BrowserWindow({
         show: false,
         webPreferences: {
-            nodeIntegration: true,
-            webSecurity: false,
-            allowRunningInsecureContent: true
+          nodeIntegration: true,
+          webSecurity: false,
+          allowRunningInsecureContent: true,
+          devTools: false
         }
     });
+  // ProductionWorker.webContents.openDevTools()
     PWW = ProductionWorker;
     PWW.loadFile(path.join(asarPath, "html", "prodworker.html"));
 
@@ -95,8 +97,13 @@ function DoWork(doRefresh = false, cb = null) {
             ProdDict = processer.ProductionDict;
             ResDict = processer.ResidentialDict;
             GoodProdDict = processer.GoodProdDict;
+
+            OPSProdDict = processer.OPSProductionDict;
+            OPSRestDict = processer.OPSResidentialDict;
+            OPSGoodProdDict = processer.OPSGoodProdDict;
+
             var x = HasProdFinished();
-            PWW.webContents.send('updateProdDict', { ProdDict, ResDict, GoodProdDict, x });
+            PWW.webContents.send('updateProdDict', { ProdDict, ResDict, GoodProdDict, OPSProdDict, OPSRestDict, OPSGoodProdDict, x });
             if (cb) cb();
         }, doRefresh);
     }, reason => {
@@ -116,6 +123,18 @@ function HasProdFinished() {
         if (goodUnit["state"]["__class__"] === "ProductionFinishedState") {
             ProdFinished.push(goodUnit["id"]);
         }
+    }
+    for (var i = 0; i < OPSProdDict.length; i++) {
+      const prodUnit = OPSProdDict[i];
+      if (prodUnit["state"]["__class__"] === "ProductionFinishedState") {
+        ProdFinished.push(prodUnit["id"]);
+      }
+    }
+    for (var i = 0; i < OPSGoodProdDict.length; i++) {
+      const goodUnit = OPSGoodProdDict[i];
+      if (goodUnit["state"]["__class__"] === "ProductionFinishedState") {
+        ProdFinished.push(goodUnit["id"]);
+      }
     }
     return ProdFinished.length;
 }
@@ -170,31 +189,25 @@ function CollectManuel(origin,callGetData = true) {
               promArr.push(FoBuilder.DoCollectProduction([goodUnit["id"]]));
             }
           }
-          if(promArr.length > 0) {
+          const promArrLength = promArr.length;
+          const isRefresh = promArrLength > 0;
+          if(promArrLength > 0) {
             requestAmountList.push(promArr.length)
           }
             FoBCore.debug(`Requests to be made: ${requestAmountList}`)
             Promise.all(promArr).then(values => {
-                if (callGetData) {
-                    Main.GetData(true, () => {
-                        if (promArr.length == 0) res(false)
-                        else {
-                          FoBCore.debug("CollectManuel callGetData res(true)")
-                          res(true);
-                        }
-                    }, true);
-                } else {
-                    if (promArr.length == 0) res(false)
-                    else {
-                      FoBCore.debug("CollectManuel res(true)")
-                      res(true);
-                    }
+              Main.GetData(true, () => {
+                if (promArrLength === 0) res(false)
+                else {
+                  FoBCore.debug("CollectManuel callGetData res(true)")
+                  res(true);
                 }
+              }, isRefresh);
             }, reason => {
                 FoBCore.debug("CollectManuel rej(reason)")
                 rej(reason);
             });
-            if (promArr.length === 0) {
+            if (promArrLength === 0) {
                 FoBCore.debug("CollectManuel promArr.length == 0")
                 res(false);
             }
