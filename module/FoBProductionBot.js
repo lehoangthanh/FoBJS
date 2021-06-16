@@ -170,23 +170,31 @@ function CollectManuel(origin,callGetData = true) {
               promArr.push(FoBuilder.DoCollectProduction([goodUnit["id"]]));
             }
           }
+          if(promArr.length > 0) {
             requestAmountList.push(promArr.length)
+          }
             FoBCore.debug(`Requests to be made: ${requestAmountList}`)
             Promise.all(promArr).then(values => {
                 if (callGetData) {
                     Main.GetData(true, () => {
-                        FoBCore.debug("CollectManuel callGetData res(true)")
-                        res(true);
+                        if (promArr.length == 0) res(false)
+                        else {
+                          FoBCore.debug("CollectManuel callGetData res(true)")
+                          res(true);
+                        }
                     }, true);
                 } else {
-                    FoBCore.debug("CollectManuel res(true)")
-                    res(true);
+                    if (promArr.length == 0) res(false)
+                    else {
+                      FoBCore.debug("CollectManuel res(true)")
+                      res(true);
+                    }
                 }
             }, reason => {
                 FoBCore.debug("CollectManuel rej(reason)")
                 rej(reason);
             });
-            if (promArr.length == 0) {
+            if (promArr.length === 0) {
                 FoBCore.debug("CollectManuel promArr.length == 0")
                 res(false);
             }
@@ -231,18 +239,21 @@ function StartManuel(callGetData = true) {
           promArr.push(FoBuilder.DoQueryProduction(goodUnit["id"], Main.CurrentGoodProduction.id));
         }
       }
-
-      if (promArr.length === 0) return promArr;
-        Promise.all(promArr).then(values => {
-            if (callGetData) {
-                Main.GetData(true, () => {
-                    res(true);
-                }, true);
-            } else
-                res(true);
-        }, reason => {
-            rej(reason);
-        });
+      Promise.all(promArr).then(values => {
+        if (callGetData) {
+          Main.GetData(true, () => {
+            if (promArr.length == 0) res(false)
+            res(true);
+          }, true);
+        } else
+          res(true);
+      }, reason => {
+        rej(reason);
+      });
+      if (promArr.length == 0) {
+        FoBCore.debug("StartManuel StartManuel.length == 0")
+        res(false);
+      }
     });
     return promise;
 }

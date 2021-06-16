@@ -62,6 +62,11 @@ const DoLogService = () => {
 const DoCollectProduction = (ids) => {
     return CollectProduction(ids);
 }
+
+const DoRemovePlunderedProduction = (ids) => {
+    return removePlunderedProduction(ids);
+}
+
 const DoQueryProduction = (id, prodID) => {
     return QueryProduction(id, prodID);
 }
@@ -97,6 +102,18 @@ const QueryProduction = (id, prodID) => {
     
     let sig = calcSig(x);
     return fetchData(x, sig);
+}
+
+const removePlunderedProduction = (ids) => {
+  var x = [{}];
+  x[0]["__class__"] = "ServerRequest";
+  x[0]["requestData"] = [ids];
+  x[0]["requestClass"] = "CityProductionService";
+  x[0]["requestMethod"] = "removePlunderedProduction";
+  x[0]["requestId"] = FoBCore.getNextRequestID();
+
+  let sig = calcSig(x);
+  return fetchData(x, sig);
 }
 
 const CancelProduction = (id) => {
@@ -423,6 +440,7 @@ exports.User_Key = User_Key;
 exports.Secret = Secret;
 
 exports.DoCollectProduction = DoCollectProduction;
+exports.DoRemovePlunderedProduction = DoRemovePlunderedProduction;
 exports.DoMotivate = DoMotivate;
 exports.DoLogService = DoLogService;
 exports.DoCollectTavern = DoCollectTavern;
