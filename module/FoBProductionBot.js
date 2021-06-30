@@ -202,7 +202,7 @@ function CollectManuel(origin,callGetData = true) {
                   FoBCore.debug("CollectManuel callGetData res(true)")
                   res(true);
                 }
-              }, isRefresh);
+              }, true);
             }, reason => {
                 FoBCore.debug("CollectManuel rej(reason)")
                 rej(reason);
