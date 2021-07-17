@@ -576,7 +576,7 @@ function GetOwnOPSBuildings() {
 
           if (type === 'diplomacy' && connected && FoBCore.hasOnlyCopperProduction(availableProds)) {
             OPSProductionDict.push(cb);
-          } else if(['residential', 'main_building'].indexOf(type) > -1 && connected) {
+          } else if(['residential', 'main_building'].indexOf(type) > -1 && connected && currentProduct !== undefined) {
             OPSResidentialDict.push(cb);
           } else if(type === 'cultural_goods_production' && connected) {
             OPSGoodProdDict.push(cb);
