@@ -196,13 +196,15 @@ function CollectManuel(origin,callGetData = true) {
           }
             FoBCore.debug(`Requests to be made: ${requestAmountList}`)
             Promise.all(promArr).then(values => {
-              Main.GetData(true, () => {
-                if (promArrLength === 0) res(false)
-                else {
-                  FoBCore.debug("CollectManuel callGetData res(true)")
-                  res(true);
+                if (callGetData) {
+                    Main.GetData(true, () => {
+                        FoBCore.debug("CollectManuel callGetData res(true)")
+                        res(true);
+                    }, true);
+                } else {
+                    FoBCore.debug("CollectManuel res(true)")
+                    res(true);
                 }
-              }, true);
             }, reason => {
                 FoBCore.debug("CollectManuel rej(reason)")
                 rej(reason);
@@ -252,21 +254,16 @@ function StartManuel(callGetData = true) {
           promArr.push(FoBuilder.DoQueryProduction(goodUnit["id"], Main.CurrentGoodProduction.id));
         }
       }
-      Promise.all(promArr).then(values => {
-        if (callGetData) {
-          Main.GetData(true, () => {
-            if (promArr.length == 0) res(false)
-            res(true);
-          }, true);
-        } else
-          res(true);
-      }, reason => {
-        rej(reason);
-      });
-      if (promArr.length == 0) {
-        FoBCore.debug("StartManuel StartManuel.length == 0")
-        res(false);
-      }
+        Promise.all(promArr).then(values => {
+            if (callGetData) {
+                Main.GetData(true, () => {
+                    res(true);
+                }, true);
+            } else
+                res(true);
+        }, reason => {
+            rej(reason);
+        });
     });
     return promise;
 }
