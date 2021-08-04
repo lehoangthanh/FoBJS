@@ -468,7 +468,7 @@ function GetData(clear = true, callback = null, dorefresh = true) {
                             builder.GetStartup()
                                 .then(body => {
                                     const QuestService = body.find(rq => rq.requestClass === 'QuestService');
-                                    const OutPostQuest = QuestService.responseData.find(qs => qs.category === 'outpost');
+                                    const OutPostQuest = QuestService && Array.isArray(QuestService.responseData) && QuestService.responseData.find(qs => qs.category === 'outpost') || null;
 
                                     UserData = processer.GetUserData(body);
                                     processer.GetResourceDefinitions(body);
@@ -483,7 +483,7 @@ function GetData(clear = true, callback = null, dorefresh = true) {
                                             processer.GetAllBuildings(jsonbody);
                                             processer.GetOwnBuildings();
                                             processer.GetDistinctProductList(!store.get("DetailedDisplay"));
-                                          if (OutPostQuest !== undefined) {
+                                          if (OutPostQuest !== null) {
                                             builder.GetOPSBuildings().then(OPSBuilding => {
                                               processer.GetOPSBuildings(OPSBuilding);
                                               processer.GetOwnOPSBuildings();
