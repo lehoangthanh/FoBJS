@@ -467,7 +467,7 @@ function GetData(clear = true, callback = null, dorefresh = true) {
                             ClanMemberDict = processer.GetClanMember(body);
                             builder.GetStartup()
                                 .then(body => {
-                                    const QuestService = body.find(rq => rq.requestClass === 'QuestService');
+                                    const QuestService = Array.isArray(body) && body.find(rq => rq.requestClass === 'QuestService');
                                     const OutPostQuest = QuestService && Array.isArray(QuestService.responseData) && QuestService.responseData.find(qs => qs.category === 'outpost') || null;
 
                                     UserData = processer.GetUserData(body);
